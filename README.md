@@ -7,11 +7,14 @@ A library of custom threading data structures, including stateful POSIX threads,
 - stateful POSIX threads
 - semaphores (weak)
 - thread barrier
+- suspension threads
 
 **Upcoming Constructs**
 
+- pausable thread
 - semaphores (strong)
 - generic wait queue
+- generic thread pool
 
 ## Dynamic Linking
 

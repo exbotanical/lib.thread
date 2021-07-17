@@ -20,10 +20,13 @@ thread_t* thread_init(thread_t* thread, char* name) {
 	}
 
 	thread->thread_created = false;
-	thread->arg = NULL;
 	thread->semaphore = NULL;
 	thread->thread_routine = NULL;
+	thread->arg = NULL;
+	thread->thread_resume_routine = NULL;
+	thread->resume_arg = NULL;
 
+	pthread_mutex_init(&thread->mutex, NULL);
 	pthread_cond_init(&thread->cv, 0);
 	pthread_attr_init(&thread->attrs);
 
@@ -57,4 +60,13 @@ void thread_run(thread_t* thread, void*(*thread_routine)(void*), void* arg) {
 	thread->thread_created = true;
 }
 
-thread_t* thread_set_attr(thread_t *thread, bool joinable);
+/**
+ * @brief Change the thread's JOINABLE attribute
+ *
+ * @param thread
+ * @param joinable
+ * @return thread_t*
+ */
+thread_t* thread_set_attr(thread_t *thread, bool joinable) {
+	pthread_attr_setdetachstate(&thread->attrs, joinable ? PTHREAD_CREATE_JOINABLE : PTHREAD_CREATE_DETACHED);
+}
