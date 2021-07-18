@@ -43,3 +43,19 @@ make win
 gcc -o main.exe main.o -L /path/to/lib.thread -llib_thread.dll
 # you may need to add the lib location to your PATH
 ```
+
+## Documentation and API
+
+### Thread Barriers
+
+A thread barrier is a thread synchronization data structure that blocks all threads at a specified critical section until a specified threshold of threads arrives at the barrier point.
+
+For example, if your program has a section that must wait for a number of tasks to be completed before proceeding, you might use a thread barrier.
+
+### Thread Pools
+
+A thread pool is a data structure that holds suspended threads, each ready to resume and execute tasks.
+
+Thread pools are useful because we are able to maintain initialized threads for the duration of a process without re-invoking `pthread_create`, an expensive wrapper for the `clone` system call.
+
+Instead, threads are suspended after finishing their respective routines; we can call them back into the main thread's context and assign to them new work whenever we want to.

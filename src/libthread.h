@@ -1,10 +1,11 @@
 #ifndef LIB_THREAD_H
 #define LIB_THREAD_H
 
-#include <pthread.h>
-#include <semaphore.h>
-#include <stdbool.h>
-#include <stdint.h>
+#include "glthread.h" /* for glthread, an impl of doubly linked list */
+
+#include <pthread.h> /* for POSIX threads and related functionality */
+#include <stdbool.h> /* for common boolean typedefs */
+#include <stdint.h> /* for extended type signatures */
 
 /* Thread Flags */
 
@@ -34,12 +35,17 @@ typedef struct semaphore {
 } semaphore_t;
 
 typedef struct barrier {
+	/* The maximum thread threshold until the barrier blocks */
   uint32_t threshold;
-  uint32_t curr_wait; /* from 0 -> threshold - 1*/
+	/* A wait period - from 0 -> threshold - 1*/
+  uint32_t curr_wait;
   pthread_cond_t cv;
-  pthread_mutex_t mutex; /* perform mutually exclusive ops on a thread barrier */
-  bool is_ready; /* is barrier disposition in progress? */
-  pthread_cond_t busy_cv; /* thread barrier in disposition progress state, block inbound threads */
+	/* Mutex for performing ops on a thread barrier */
+  pthread_mutex_t mutex;
+	/* State flag: is barrier disposition in progress? */
+  bool is_ready;
+	 /* Condition Variable: if thread barrier in 'disposition progress' state, block inbound threads */
+  pthread_cond_t busy_cv;
 } barrier_t;
 
 /**
@@ -47,19 +53,57 @@ typedef struct barrier {
  * data structure of a thread
  */
 typedef struct thread {
-  char name[32]; /* Name identifier for the thread */
-  bool thread_created; /* Has the thread member been initialized? */
-  pthread_t thread; /* Actual pthread_t */
-  void* arg; /* Data passed to the thread routine */
-  void* (*thread_routine)(void*); /* The routine executed upon thread creation */
-	void* resume_arg; /* Data passed to the thread resume routine */
-  void* (*thread_resume_routine)(void*); /* The routine executed when the thread awakens from suspension */
-	pthread_attr_t attrs; /* The pthread_t member's attributes */
-  semaphore_t* semaphore; /* The pthread_t member's semaphore structure */
-  pthread_cond_t cv; /* The pthread_t member's condition variable */
-	pthread_mutex_t mutex; /* Update thread state in a mutually exclusive manner */
-	uint32_t flags; /* Bitflags for tracking thread state */
+	/* Name identifier for the thread */
+  char name[32];
+	/* Has the thread member been initialized? */
+  bool thread_created;
+  /* Actual pthread_t */
+	pthread_t thread;
+  /* Data passed to the thread routine */
+	void* arg;
+  /* The routine executed upon thread creation */
+	void* (*thread_routine)(void*);
+	/* Data passed to the thread resume routine */
+	void* resume_arg;
+	/* The routine executed when the thread awakens from suspension */
+  void* (*thread_resume_routine)(void*);
+	/* The pthread_t member's attributes */
+	pthread_attr_t attrs;
+	/* The pthread_t member's semaphore structure */
+  semaphore_t* semaphore;
+	/* The pthread_t member's condition variable */
+  pthread_cond_t cv;
+	/* Update thread state in a mutually exclusive manner */
+	pthread_mutex_t mutex;
+	/* Bitflags for tracking thread state */
+	uint32_t flags;
+	/* A pointer to the linked list node to which the thread belongs - used by thread pools */
+	glthread_t glthread;
 } thread_t;
+
+/**
+ * @brief A thread pool, implemented as a
+ * doubly linked list with offset data storage
+ */
+typedef struct thread_pool {
+	/* Head node of thread pool */
+	glthread_t head;
+	pthread_mutex_t mutex;
+} thread_pool_t;
+
+/**
+ * @brief Represents thread execution data for
+ * different states
+ */
+typedef struct thread_exec_data {
+	/* Routine invoked at the thread execution stage */
+	void* (*exec_routine)(void*);
+	void* exec_arg;
+	/*Routine invoked at the thread resuspend stage 22*/
+	void* (*resuspend_routine)(thread_pool_t*, thread_t*);
+	thread_pool_t* pool;
+	thread_t* thread;
+} thread_exec_data_t;
 
 /* Weak Semaphore API */
 
@@ -98,6 +142,25 @@ void thread_set_suspend_routine(
 	thread_t* thread,
 	void*(*thread_routine)(void*),
 	void* suspend_arg
+);
+
+/* Thread Pool API */
+
+// TODO update to macro
+thread_t* glued(glthread_t* glthreadptr) {
+	return (thread_t*)((char*)(glthreadptr) - (char*)&(((thread_t*)0)->glthread));
+}
+
+void thread_pool_init(thread_pool_t* pool);
+
+void thread_pool_insert(thread_pool_t* pool, thread_t* thread);
+
+thread_t* thread_pool_get(thread_pool_t* pool);
+
+bool thread_pool_dispatch(
+	thread_pool_t* pool,
+	void*(*thread_routine)(void*),
+	void*routine_arg
 );
 
 #endif /* LIB_THREAD_H */

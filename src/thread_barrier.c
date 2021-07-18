@@ -1,3 +1,16 @@
+/**
+ * @file thread_barrier.c
+ * @author Matthew Zito (goldmund@freenode)
+ * @brief A barrier that activates after `threshold` threads have at
+ * any given time attempted to access the surrounded Critical Section
+ *
+ * @version 0.1
+ * @date 2021-07-18
+ *
+ * @copyright Copyright (c) 2021 Matthew Zito
+ *
+ */
+
 #include "libthread.h"
 
 /**
