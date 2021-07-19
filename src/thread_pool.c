@@ -1,5 +1,18 @@
 #include "libthread.h"
 
+#include <stdlib.h> /* for malloc */
+
+/* Local Helpers Declarations */
+static bool thread_pool_exec(thread_t* thread);
+static void* thread_pool_resuspend(thread_pool_t* pool, thread_t* thread);
+static void* thread_pool_exec_and_resuspend(void* arg);
+
+thread_t* glued(glthread_t* glthreadptr) {
+	return (thread_t*)((char*)(glthreadptr) - (char*)&(((thread_t*)0)->glthread));
+}
+
+/* Public API */
+
 /**
  * @brief Initialize and allocate memory for a new thread pool
  *
@@ -68,15 +81,24 @@ bool thread_pool_dispatch(
 
 	thread_exec_data_t* thread_data = (thread_exec_data_t*)(thread->arg);
 
-	if (thread_data == NULL) {
+	if (!thread_data) {
 		thread_data = malloc(sizeof(thread_exec_data_t));
 	}
 
-	thread_data->exec_arg = routine_arg;
-	thread_data->exec_routine = thread_routine;
 	thread_data->pool = pool;
 	thread_data->thread = thread;
+
+	thread_data->exec_arg = routine_arg;
+	thread_data->exec_routine = thread_routine;
 	thread_data->resuspend_routine = thread_pool_resuspend;
+	thread->thread_routine = thread_pool_exec_and_resuspend;
+
+	thread->arg = (void*)thread_data;
+
+	// invoke thread fn now
+	if (!thread_pool_exec(thread)) {
+		return false;
+	}
 
 	return true;
 }
@@ -90,7 +112,7 @@ bool thread_pool_dispatch(
  * @param pool
  * @param thread
  */
-static void thread_pool_resuspend(thread_pool_t* pool, thread_t* thread) {
+static void* thread_pool_resuspend(thread_pool_t* pool, thread_t* thread) {
 	pthread_mutex_lock(&pool->mutex);
 
 	glthread_insert_after(&pool->head, &thread->glthread);
@@ -99,9 +121,12 @@ static void thread_pool_resuspend(thread_pool_t* pool, thread_t* thread) {
 		semaphore_post(thread->semaphore);
 	}
 
+	// suspend again
 	pthread_cond_wait(&thread->cv, &thread->mutex);
 
 	pthread_mutex_unlock(&pool->mutex);
+
+	return NULL;
 }
 
 /**
@@ -109,15 +134,37 @@ static void thread_pool_resuspend(thread_pool_t* pool, thread_t* thread) {
  *
  * @param pool
  * @param thread
+ *
+ * @returns bool
  */
-static void thread_pool_exec(thread_t* thread) {
+static bool thread_pool_exec(thread_t* thread) {
 	// provided thread must be 'active' i.e. not in the thread pool currently
-	if (!IS_GLTHREAD_EMPTY(&thread->glthread)) return NULL;
+	if (!IS_GLTHREAD_EMPTY(&thread->glthread)) return false;
 
 	// if the thread is already created, it is in a blocked state - thus, we resume it
 	if (!thread->thread_created) {
-		thread_run(thread, thread->thread_routine, thread->arg);
+		if (!thread_run(thread, thread->thread_routine, thread->arg)) {
+			return false;
+		}
 	} else {
 		pthread_cond_signal(&thread->cv);
+	}
+
+	return true;
+}
+
+/**
+ * @brief Executes the execution and resuspension
+ * stages of a thread pool thread
+ *
+ * @param arg
+ * @return void*
+ */
+static void* thread_pool_exec_and_resuspend(void* arg) {
+	thread_exec_data_t* thread_data = (thread_exec_data_t*)arg;
+
+	while (1) {
+		thread_data->exec_routine(thread_data->exec_arg);
+		thread_data->resuspend_routine(thread_data->pool, thread_data->thread);
 	}
 }

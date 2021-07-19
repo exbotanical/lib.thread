@@ -13,18 +13,18 @@
  * @return thread_t*
  */
 thread_t* thread_init(thread_t* thread, char* name) {
-	if (!thread) thread = calloc(1, sizeof(thread));
+	if (!thread) thread = malloc(sizeof(thread));
 
 	if (strlcpy(thread->name, name, sizeof(thread->name)) >= sizeof(thread->name)) {
 		return NULL;
 	}
 
 	thread->thread_created = false;
-	thread->semaphore = NULL;
 	thread->thread_routine = NULL;
 	thread->arg = NULL;
 	thread->thread_resume_routine = NULL;
 	thread->resume_arg = NULL;
+	thread->flags = 0;
 
 	pthread_mutex_init(&thread->mutex, NULL);
 	pthread_cond_init(&thread->cv, 0);
@@ -35,18 +35,17 @@ thread_t* thread_init(thread_t* thread, char* name) {
 
 /**
  * @brief Create the thread and invoke its routine
- *	Defaults to a joinable thread
+ * Defaults to a joinable thread
  *
  * @param thread
  * @param thread_routine
  * @param arg
+ *
+ * @returns bool Was the function able to create the pthread?
  */
-void thread_run(thread_t* thread, void*(*thread_routine)(void*), void* arg) {
+bool thread_run(thread_t* thread, void*(*thread_routine)(void*), void* arg) {
 	thread->thread_routine = thread_routine;
 	thread->arg = arg;
-
-	pthread_attr_init(&thread->attrs);
-	pthread_attr_setdetachstate(&thread->attrs, PTHREAD_CREATE_JOINABLE);
 
 	if (pthread_create(
 		&thread->thread,
@@ -54,10 +53,13 @@ void thread_run(thread_t* thread, void*(*thread_routine)(void*), void* arg) {
 		thread_routine,
 		arg
 	) != 0) {
-		return NULL;
+		perror("thread creation");
+		return false;
 	}
 
 	thread->thread_created = true;
+
+	return true;
 }
 
 /**

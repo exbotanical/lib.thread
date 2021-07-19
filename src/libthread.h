@@ -126,7 +126,7 @@ void barrier_wait(barrier_t* barrier);
 
 thread_t* thread_init(thread_t* thread, char* name);
 
-void thread_run(thread_t* thread, void*(*thread_routine)(void*), void* arg);
+bool thread_run(thread_t* thread, void*(*thread_routine)(void*), void* arg);
 
 thread_t* thread_set_attr(thread_t *thread, bool joinable);
 
@@ -145,11 +145,6 @@ void thread_set_suspend_routine(
 );
 
 /* Thread Pool API */
-
-// TODO update to macro
-thread_t* glued(glthread_t* glthreadptr) {
-	return (thread_t*)((char*)(glthreadptr) - (char*)&(((thread_t*)0)->glthread));
-}
 
 void thread_pool_init(thread_pool_t* pool);
 
