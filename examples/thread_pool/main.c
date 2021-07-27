@@ -65,28 +65,22 @@ void* odd_routine(void* arg) {
 }
 
 int main(int argc, char* argv[]) {
-	thread_pool_t* pool = malloc(sizeof(thread_pool_t));
+	thread_pool_t* pool = calloc(1,sizeof(thread_pool_t));
 	thread_pool_init(pool);
 
-	thread_t* thread1;
-	thread_t* thread2;
+	thread_t* thread1 = thread_init(0, "odd_thread");
+	thread_t* thread2 = thread_init(0, "even_thread");
 
-	if (!(thread1 = thread_init(thread1, "odd_thread"))) {
-		return EXIT_FAILURE;
-	}
-
-	if (!(thread2 = thread_init(thread2, "even_thread"))) {
-		return EXIT_FAILURE;
-	}
+	if (!thread1 || !thread2) return EXIT_FAILURE;
 
 	thread_pool_insert(pool, thread1);
 	thread_pool_insert(pool, thread2);
 
-	if (!thread_pool_dispatch(pool, odd_routine, 0)) {
+	if (!thread_pool_dispatch(pool, odd_routine, 0, true)) {
 		printf("failed dispatch\n");
 	}
 
-	if (!thread_pool_dispatch(pool, even_routine, 0)) {
+	if (!thread_pool_dispatch(pool, even_routine, 0, true)) {
 		printf("failed dispatch\n");
 	}
 
@@ -94,15 +88,16 @@ int main(int argc, char* argv[]) {
 
 	printf("Dispatching with new work...\n");
 
-	if (!thread_pool_dispatch(pool, odd_reverse_routine, 0)) {
+
+	if (!thread_pool_dispatch(pool, odd_reverse_routine, 0, true)) {
 		printf("failed dispatch\n");
 	}
 
-
-	if (!thread_pool_dispatch(pool, even_reverse_routine, 0)) {
+	if (!thread_pool_dispatch(pool, even_reverse_routine, 0, true)) {
 		printf("failed dispatch\n");
 	}
 
-	pthread_exit(0);
+	// pthread_exit(0);
+
 	return EXIT_SUCCESS;
 }

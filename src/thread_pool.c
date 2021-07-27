@@ -3,9 +3,9 @@
 #include <stdlib.h> /* for malloc */
 
 /* Local Helpers Declarations */
-static bool thread_pool_exec(thread_t* thread);
-static void* thread_pool_resuspend(thread_pool_t* pool, thread_t* thread);
-static void* thread_pool_exec_and_resuspend(void* arg);
+bool thread_pool_exec(thread_t* thread);
+void* thread_pool_resuspend(thread_pool_t* pool, thread_t* thread);
+void* thread_pool_exec_and_resuspend(void* arg);
 
 thread_t* glued(glthread_t* glthreadptr) {
 	return (thread_t*)((char*)(glthreadptr) - (char*)&(((thread_t*)0)->glthread));
@@ -73,11 +73,17 @@ thread_t* thread_pool_get(thread_pool_t* pool) {
 bool thread_pool_dispatch(
 	thread_pool_t* pool,
 	void*(*thread_routine)(void*),
-	void*routine_arg
+	void* routine_arg,
+	bool block_caller
 ) {
-	thread_t* thread;
+	thread_t* thread = thread_pool_get(pool);
 
-	if (!(thread = thread_pool_get(pool))) return false;
+	if (!thread) return false;
+
+	if (block_caller && !thread->semaphore) {
+		thread->semaphore = malloc(sizeof(semaphore_t));
+		semaphore_init(thread->semaphore, 0);
+	}
 
 	thread_exec_data_t* thread_data = (thread_exec_data_t*)(thread->arg);
 
@@ -92,13 +98,21 @@ bool thread_pool_dispatch(
 	thread_data->exec_routine = thread_routine;
 	thread_data->resuspend_routine = thread_pool_resuspend;
 	thread->thread_routine = thread_pool_exec_and_resuspend;
-
 	thread->arg = (void*)thread_data;
 
 	// invoke thread fn now
 	if (!thread_pool_exec(thread)) {
 		return false;
 	}
+
+	if (block_caller) {
+		semaphore_wait(thread->semaphore);
+		// caller notified; destroy the semaphore
+		semaphore_destroy(thread->semaphore);
+		free(thread->semaphore);
+
+		thread->semaphore = NULL;
+  }
 
 	return true;
 }
@@ -112,7 +126,7 @@ bool thread_pool_dispatch(
  * @param pool
  * @param thread
  */
-static void* thread_pool_resuspend(thread_pool_t* pool, thread_t* thread) {
+void* thread_pool_resuspend(thread_pool_t* pool, thread_t* thread) {
 	pthread_mutex_lock(&pool->mutex);
 
 	glthread_insert_after(&pool->head, &thread->glthread);
@@ -122,7 +136,7 @@ static void* thread_pool_resuspend(thread_pool_t* pool, thread_t* thread) {
 	}
 
 	// suspend again
-	pthread_cond_wait(&thread->cv, &thread->mutex);
+	pthread_cond_wait(&thread->cv, &pool->mutex);
 
 	pthread_mutex_unlock(&pool->mutex);
 
@@ -137,16 +151,16 @@ static void* thread_pool_resuspend(thread_pool_t* pool, thread_t* thread) {
  *
  * @returns bool
  */
-static bool thread_pool_exec(thread_t* thread) {
+bool thread_pool_exec(thread_t* thread) {
 	// provided thread must be 'active' i.e. not in the thread pool currently
 	if (!IS_GLTHREAD_EMPTY(&thread->glthread)) return false;
 
-	// if the thread is already created, it is in a blocked state - thus, we resume it
 	if (!thread->thread_created) {
 		if (!thread_run(thread, thread->thread_routine, thread->arg)) {
 			return false;
 		}
 	} else {
+	  // if the thread is already created, it is in a blocked state - thus, we resume it
 		pthread_cond_signal(&thread->cv);
 	}
 
@@ -160,7 +174,7 @@ static bool thread_pool_exec(thread_t* thread) {
  * @param arg
  * @return void*
  */
-static void* thread_pool_exec_and_resuspend(void* arg) {
+void* thread_pool_exec_and_resuspend(void* arg) {
 	thread_exec_data_t* thread_data = (thread_exec_data_t*)arg;
 
 	while (1) {

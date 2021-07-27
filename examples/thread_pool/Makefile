@@ -6,7 +6,7 @@ TARGET=demo
 all: $(TARGET)
 
 $(TARGET): $(OBJFILES)
-	$(CC) -I ../src $(OBJFILES) -o $(INTERMEDIARY) -lpthread -L../ -lthread
+	$(CC) -I ../../src $(OBJFILES) -o $(INTERMEDIARY) -lpthread -L../.. -lthread
 
 clean:
 	rm $(TARGET)

@@ -20,11 +20,11 @@
 
 /* Canonical Aliases */
 
-#define P(sem) sem_wait(sem)
-#define V(sem) sem_post(sem)
+#define P(sem) semaphore_wait(sem)
+#define V(sem) semaphore_post(sem)
 
-#define UP(sem) sem_wait(sem)
-#define DOWN(sem) sem_post(sem)
+#define UP(sem) semaphore_wait(sem)
+#define DOWN(sem) semaphore_post(sem)
 
 /* Structures */
 
@@ -155,7 +155,8 @@ thread_t* thread_pool_get(thread_pool_t* pool);
 bool thread_pool_dispatch(
 	thread_pool_t* pool,
 	void*(*thread_routine)(void*),
-	void*routine_arg
+	void* routine_arg,
+	bool block_caller
 );
 
 #endif /* LIB_THREAD_H */

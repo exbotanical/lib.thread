@@ -59,3 +59,5 @@ A thread pool is a data structure that holds suspended threads, each ready to re
 Thread pools are useful because we are able to maintain initialized threads for the duration of a process without re-invoking `pthread_create`, an expensive wrapper for the `clone` system call.
 
 Instead, threads are suspended after finishing their respective routines; we can call them back into the main thread's context and assign to them new work whenever we want to.
+
+Find example usage of the thread pool API [here](./examples/thread_pool/)

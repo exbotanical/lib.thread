@@ -1,5 +1,7 @@
 #include "libthread.h"
 
+#include "util.h"
+
 #include <bsd/bsd.h>
 #include <stdlib.h> /* for calloc, et al */
 #include <bsd/string.h> /* for strlcpy */
@@ -13,7 +15,7 @@
  * @return thread_t*
  */
 thread_t* thread_init(thread_t* thread, char* name) {
-	if (!thread) thread = malloc(sizeof(thread));
+	if (!thread) thread = malloc(sizeof(thread_t));
 
 	if (strlcpy(thread->name, name, sizeof(thread->name)) >= sizeof(thread->name)) {
 		return NULL;
@@ -57,6 +59,7 @@ bool thread_run(thread_t* thread, void*(*thread_routine)(void*), void* arg) {
 		return false;
 	}
 
+	SET_BIT(thread->flags, THREAD_F_RUNNING);
 	thread->thread_created = true;
 
 	return true;

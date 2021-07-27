@@ -3,7 +3,7 @@ IFS=$'\n'
 
 TESTING_DIR=t
 UTIL_F=util.bash
-REPO_DIR=lib.thread
+REPO_DIR=thread
 
 declare -a SKIP_FILES=(
 
@@ -25,7 +25,7 @@ run_test () {
 	local file_name="$1"
 
 	gcc -I ./src/ -c "$TESTING_DIR/$file_name" -o main.o
-	gcc -o main main.o -L./ -l $REPO_DIR -lbsd
+	gcc -o main main.o -L./ -l$REPO_DIR -lbsd
 
 	export LD_LIBRARY_PATH=$HOME/repositories/$REPO_DIR/src/:$LD_LIBRARY_PATH
 	green "\n[+] Running test...\n\n"
