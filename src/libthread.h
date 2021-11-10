@@ -1,7 +1,7 @@
 #ifndef LIB_THREAD_H
 #define LIB_THREAD_H
 
-#include "glthread.h" /* for glthread, an impl of doubly linked list */
+#include "lib.cartilage/libcartilage.h" /* for glthread, an impl of doubly linked list */
 
 #include <pthread.h> /* for POSIX threads and related functionality */
 #include <stdbool.h> /* for common boolean typedefs */
@@ -107,13 +107,13 @@ typedef struct thread_exec_data {
 
 /* Weak Semaphore API */
 
-semaphore_t* semaphore_init(semaphore_t* sem, int count);
+void semaphore_init(semaphore_t* sem, int count);
 
-semaphore_t* semaphore_wait(semaphore_t* sem);
+void semaphore_wait(semaphore_t* sem);
 
-semaphore_t* semaphore_post(semaphore_t* sem);
+void semaphore_post(semaphore_t* sem);
 
-semaphore_t* semaphore_destroy(semaphore_t* sem);
+void semaphore_destroy(semaphore_t* sem);
 
 int semaphore_reveal(semaphore_t* sem);
 
@@ -128,7 +128,7 @@ thread_t* thread_init(thread_t* thread, char* name);
 
 bool thread_run(thread_t* thread, void*(*thread_routine)(void*), void* arg);
 
-thread_t* thread_set_attr(thread_t *thread, bool joinable);
+void thread_set_attr(thread_t *thread, bool joinable);
 
 /* Suspensions API */
 

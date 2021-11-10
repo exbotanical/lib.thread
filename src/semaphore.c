@@ -5,9 +5,9 @@
  *
  * @param sem
  * @param count
- * @return semaphore_t*
+ * @return void
  */
-semaphore_t* semaphore_init(semaphore_t* sem, int count) {
+void semaphore_init(semaphore_t* sem, int count) {
   sem->permit_counter = count;
   pthread_cond_init(&sem->cv, NULL);
   pthread_mutex_init(&sem->mutex, NULL);
@@ -17,9 +17,9 @@ semaphore_t* semaphore_init(semaphore_t* sem, int count) {
  * @brief Lock the semaphore
  *
  * @param sem
- * @return semaphore_t*
+ * @return void
  */
-semaphore_t* semaphore_wait(semaphore_t* sem) {
+void semaphore_wait(semaphore_t* sem) {
   pthread_mutex_lock(&sem->mutex);
   sem->permit_counter--;
 
@@ -35,9 +35,9 @@ semaphore_t* semaphore_wait(semaphore_t* sem) {
  * @brief Signal to the semaphore that a single thread's queue lifecycle has completed
  *
  * @param sem
- * @return semaphore_t*
+ * @return void
  */
-semaphore_t* semaphore_post(semaphore_t* sem) {
+void semaphore_post(semaphore_t* sem) {
   bool has_waiting_thread;
   pthread_mutex_lock(&sem->mutex);
 
@@ -55,9 +55,9 @@ semaphore_t* semaphore_post(semaphore_t* sem) {
  * @brief Destroy the given semaphore
  *
  * @param sem
- * @return semaphore_t*
+ * @return void
  */
-semaphore_t* semaphore_destroy(semaphore_t* sem) {
+void semaphore_destroy(semaphore_t* sem) {
   sem->permit_counter = 0;
   pthread_mutex_unlock(&sem->mutex);
   pthread_cond_destroy(&sem->cv);

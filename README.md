@@ -1,6 +1,6 @@
 # lib.thread
 
-A library of custom threading data structures, including stateful POSIX threads, mutexes, wait queues, and semaphores
+A library of custom threading data structures, including stateful POSIX threads, mutexes, wait queues, and semaphores.
 
 **Currently Implemented Constructs**
 
@@ -15,6 +15,20 @@ A library of custom threading data structures, including stateful POSIX threads,
 - pausable thread
 - semaphores (strong)
 - generic wait queue
+
+# Install
+
+Via [clib](https://github.com/clibs/clib/):
+
+```bash
+clib install MatthewZito/lib.thread
+```
+
+From Source:
+```bash
+git clone https://github.com/MatthewZito/lib.thread
+cd lib.thread && make
+```
 
 ## Dynamic Linking
 

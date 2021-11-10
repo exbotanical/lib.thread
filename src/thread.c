@@ -2,9 +2,9 @@
 
 #include "util.h"
 
-#include <bsd/bsd.h>
+#include <stdio.h> /* for perror */
 #include <stdlib.h> /* for calloc, et al */
-#include <bsd/string.h> /* for strlcpy */
+#include <string.h> /* for strncpy */
 
 /**
  * @brief Initialize the thread, allocating memory if it is NULL
@@ -17,9 +17,9 @@
 thread_t* thread_init(thread_t* thread, char* name) {
 	if (!thread) thread = malloc(sizeof(thread_t));
 
-	if (strlcpy(thread->name, name, sizeof(thread->name)) >= sizeof(thread->name)) {
-		return NULL;
-	}
+	// we used to use `strlcpy` but its not standard; perhaps we'll look at `strncpy_s`
+	// if we decide to explicitly use std C11
+	strncpy(thread->name, name, sizeof(thread->name));
 
 	thread->thread_created = false;
 	thread->thread_routine = NULL;
@@ -70,8 +70,8 @@ bool thread_run(thread_t* thread, void*(*thread_routine)(void*), void* arg) {
  *
  * @param thread
  * @param joinable
- * @return thread_t*
+ * @return void
  */
-thread_t* thread_set_attr(thread_t *thread, bool joinable) {
+void thread_set_attr(thread_t *thread, bool joinable) {
 	pthread_attr_setdetachstate(&thread->attrs, joinable ? PTHREAD_CREATE_JOINABLE : PTHREAD_CREATE_DETACHED);
 }
