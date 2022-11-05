@@ -24,6 +24,6 @@
     "src/util.h"
   ],
   "dependencies": {
-    "MatthewZito/lib.cartilage": "*"
+    "exbotanical/lib.cartilage": "0.0.2"
   }
 }
