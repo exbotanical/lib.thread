@@ -21,12 +21,12 @@ A library of custom threading data structures, including stateful POSIX threads,
 Via [clib](https://github.com/clibs/clib/):
 
 ```bash
-clib install MatthewZito/lib.thread
+clib install exbotanical/lib.thread
 ```
 
 From Source:
 ```bash
-git clone https://github.com/MatthewZito/lib.thread
+git clone https://github.com/exbotanical/lib.thread
 cd lib.thread && make
 ```
 
