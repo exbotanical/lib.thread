@@ -1,8 +1,8 @@
 {
   "name": "lib.thread",
   "version": "0.0.1",
-  "author": "Matthew Zito (goldmund)",
-  "repo": "MatthewZito/lib.thread",
+  "author": "Matthew Zito",
+  "repo": "exbotanical/lib.thread",
   "license": "MIT",
   "description": "A utility library of custom threading data structures",
   "keywords": [
